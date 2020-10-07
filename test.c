@@ -4,10 +4,6 @@
 
 #define ARR_SIZE(_arr_) (sizeof(_arr_) / sizeof(_arr_[0]))
 
-struct element {
-	int num;
-};
-
 static int is_greater_than_int(void *left, void *right)
 {
 	int *pleft = (int*)left;

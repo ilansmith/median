@@ -1,4 +1,8 @@
 #include <stdlib.h>
+#ifdef DEBUG
+#include <stdio.h>
+#endif
+
 #include "vector/vector.h"
 #include "median.h"
 
@@ -7,12 +11,34 @@ struct median {
 	median_is_greater_func_t func;
 };
 
-static void swap(int *a, int *b)
+#ifdef DEBUG
+/* works only for integer vector elements */
+static void print_vecotr(struct median *ctx, char *header)
 {
-	*a ^= *b ^= *a^ ^= *b;
+	int **iter;
+	int is_first = 1;
+
+	printf("vecotr %s: (", header);
+	VEC_FOREACH(ctx->vector, iter) {
+		printf("%s%d", is_first ? "" : ", ", **iter);
+		is_first = 0;
+	}
+	printf(")\n");
+}
+#else
+#define print_vecotr(_ctx_, _header_)
+#endif
+
+static void swap(vector_t vector, int idx_a, int idx_b)
+{
+	void *a = vec_at(vector, idx_a);
+	void *b = vec_at(vector, idx_b);
+
+	vec_insert(vector, a, (unsigned int)idx_b);
+	vec_insert(vector, b, (unsigned int)idx_a);
 }
 
-static void quicksort(int arr, int l, int r)
+static void quicksort(struct median *ctx, int l, int r)
 {
 	void *pivot;
 	int cnt;
@@ -23,24 +49,25 @@ static void quicksort(int arr, int l, int r)
 		return;
 
 	/* choose pivot to be the last element in the subarray */
-	pivot = arr[r];
+	pivot = vec_at(ctx->vector, r);
 
 	/* Index indicating the "split" between elements smaller than pivot
 	 * and elements greater than pivot */
-	ctn = 1;
+	cnt = 1;
 
 	/* Traverse through array from 1 to r */
-	for (i = 1, i <= r; i++) {
+	for (i = 1; i <= r; i++) {
 		/* if an element is greater than pivot, continue... */
-		if (pivot < arr[i])
+		if (ctx->func(pivot, vec_at(ctx->vector, i)))
 			continue;
 
-		/* Swap arr[cnt] and arr[i] so that the smaller alement arr[i]
-		 * is to the left of all elements greater than pivot */
-		swap(&arr[cnt], &arr[i]);
+		/* Swap vector[cnt] and vector[i] so that the smaller alement
+		 * vector[i] is to the left of all elements greater than
+		 * pivot */
+		swap(ctx->vector, cnt, i);
 
 		/* Make sure to increment cnt so we can keep track of what to
-		 * swap arr[i] with */
+		 * swap vector[i] with */
 		cnt++;
 	}
 
@@ -48,12 +75,8 @@ static void quicksort(int arr, int l, int r)
 	 *   cnt is currently a t one plus the pivot's index
 	 *   (Hence, the cnt-2 when recursively sorting the left side of pivot)
 	 */
-	quicksort(arr, 1, cnt-2); /* Recursively sort the left side of pivot */
-	quicksort(arr, cnt, r); /* Recursively sort the right side of pivot */
-}
-
-static vector_t do_sort(struct median ctx)
-{
+	quicksort(ctx, 1, cnt-2); /* Recursively sort the left side of pivot */
+	quicksort(ctx, cnt, r); /* Recursively sort the right side of pivot */
 }
 
 void median_uninit(median_t median)
@@ -91,6 +114,11 @@ int median_add(median_t median, void *elm)
 
 void *median_calc(median_t median)
 {
+	struct median *ctx = (struct median*)median;
+
+	print_vecotr(ctx, "before");
+	quicksort(ctx, 0, vec_size(ctx->vector) - 1);
+	print_vecotr(ctx, "after");
 	return NULL;
 }
 

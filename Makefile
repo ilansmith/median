@@ -7,7 +7,7 @@ LIBS=libmedian.a vector
 OBJS=test.o
 
 ifeq ($(DEBUG),y)
-	CFLAGS += -g -O0
+	CFLAGS += -g -O0 -DDEBUG
 else
 	CFLAGS += -O3
 endif
