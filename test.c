@@ -12,13 +12,22 @@ static int is_greater_than_int(void *left, void *right)
 	return *pleft < *pright;
 }
 
+static void set_median_float(void *vec_e1, void *vec_e2, void *val)
+{
+	float *fval = (float*)val;
+
+	*fval = (*(int*)vec_e1 + *(int*)vec_e2) / (float)2;
+}
+
 int main(int argc, char **argv)
 {
-	int arr[] = { 2, 4, 6, 3, 3, 98, 15, 3, 77 };
-	int i, *median;
+	int arr[] = { 2, 4, 7, 3, 3, 98, 15, 3, 77, 47 };
+	int i;
+	float median;
 	median_t ctx;
 
-	ctx = median_init((median_is_greater_func_t)is_greater_than_int);
+	ctx = median_init((median_is_greater_func_t)is_greater_than_int,
+		(media_set_val_div2_func_t )set_median_float);
 	if (!ctx) {
 		printf("Failed to init median\n");
 		return -1;
@@ -29,8 +38,7 @@ int main(int argc, char **argv)
 			goto exit;
 	}
 
-	median = median_calc(ctx);
-	if (!median) {
+	if (median_calc(ctx, &median)) {
 		printf("Error calculating median\n");
 		goto exit;
 	}
@@ -38,7 +46,7 @@ int main(int argc, char **argv)
 	printf("median of {");
 	for (i = 0; i < ARR_SIZE(arr); i++)
 		printf("%s%d", i ? ", " : "", arr[i]);
-	printf("} is: %d\n", *median);
+	printf("} is: %.2g\n", median);
 
 exit:
 	median_uninit(ctx);

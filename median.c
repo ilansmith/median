@@ -8,7 +8,8 @@
 
 struct median {
 	vector_t vector;
-	median_is_greater_func_t func;
+	median_is_greater_func_t is_greater;
+	media_set_val_div2_func_t set_val_div2;
 };
 
 #ifdef DEBUG
@@ -58,7 +59,7 @@ static void quicksort(struct median *ctx, int l, int r)
 	/* Traverse through array from 1 to r */
 	for (i = 1; i <= r; i++) {
 		/* if an element is greater than pivot, continue... */
-		if (ctx->func(pivot, vec_at(ctx->vector, i)))
+		if (ctx->is_greater(pivot, vec_at(ctx->vector, i)))
 			continue;
 
 		/* Swap vector[cnt] and vector[i] so that the smaller alement
@@ -87,7 +88,8 @@ void median_uninit(median_t median)
 	free(ctx);
 }
 
-median_t median_init(median_is_greater_func_t func)
+median_t median_init(median_is_greater_func_t is_greater,
+	media_set_val_div2_func_t set_val_div2)
 {
 	struct median *ctx;
 
@@ -100,7 +102,8 @@ median_t median_init(median_is_greater_func_t func)
 		vec_uninit(ctx);
 		return NULL;
 	}
-	ctx->func = func;
+	ctx->is_greater = is_greater;
+	ctx->set_val_div2 = set_val_div2;
 
 	return (median_t)ctx;
 }
@@ -112,13 +115,29 @@ int median_add(median_t median, void *elm)
 	return vec_push_back(ctx->vector, elm);
 }
 
-void *median_calc(median_t median)
+int median_calc(median_t median, void *value)
 {
 	struct median *ctx = (struct median*)median;
+	unsigned int size = vec_size(ctx->vector);
+
+	if (!size)
+		return -1;
 
 	print_vecotr(ctx, "before");
-	quicksort(ctx, 0, vec_size(ctx->vector) - 1);
+	quicksort(ctx, 0, size - 1);
 	print_vecotr(ctx, "after");
-	return NULL;
+
+	if (size & 0x1) { /* size is odd */
+		void *elm = vec_at(ctx->vector, size >> 1);
+
+		ctx->set_val_div2(elm, elm, value);
+	} else { /*size is even */
+		void *elm1 = vec_at(ctx->vector, (size - 1) >> 1);
+		void *elm2 = vec_at(ctx->vector, (size >> 1));
+
+		ctx->set_val_div2(elm1, elm2, value);
+	}
+
+	return 0;
 }
 
